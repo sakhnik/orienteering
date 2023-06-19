@@ -27,10 +27,6 @@ class Course:
             return 3.0
         if rank == "ІІІ" or rank == "ІІ-ю":
             return 1.0
-        if rank == "б/р":
-            return 0.3
-        if rank == "б/р ю":
-            return 0.1
         return 0.1 if self.is_junior else 0.3
 
     def calc_value(self, competitors: Competitors, storage) -> float:
