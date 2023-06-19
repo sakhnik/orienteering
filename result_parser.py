@@ -1,12 +1,16 @@
 import xml.etree.ElementTree as ET
 from collections import OrderedDict
+from interfaces import Result
 
 ns = {"": "http://www.orienteering.org/datastandard/3.0"}
 
 
 class Name:
     def __init__(self, el: ET.Element):
-        self.id: int = int(el.find("./Person/Id", ns).text)
+        try:
+            self.id: int = int(el.find("./Person/Id", ns).text)
+        except (ValueError, TypeError):
+            self.id: int = None
         self.family: str = el.find("./Person/Name/Family", ns).text
         self.given: str = el.find("./Person/Name/Given", ns).text
         self.club: str = el.find("./Organisation/Name", ns).text
@@ -36,23 +40,35 @@ def get_status(st: str) -> str:
     raise Exception(f"Unknown status {st}")
 
 
-class Result:
+class ParsedResult(Result):
     def __init__(self, el: ET.Element):
         self.name = Name(el)
-        self.stage: int = 0
         self.time: float = float(el.find("./Result/Time", ns).text)
         self.time_behind: float = \
             float(el.find("./Result/TimeBehind", ns).text)
-        self.rank: str = None
         try:
             self.position: int = int(el.find("./Result/Position", ns).text)
         except AttributeError:
             self.position: int = None
         self.status: str = get_status(el.find("./Result/Status", ns).text)
 
+    def get_name(self) -> str:
+        return self.name.full_name()
 
-Competitors = list[Result]
-ClassResults = OrderedDict[str, Competitors]
+    def get_club(self) -> str:
+        return self.name.club
+
+    def get_result(self) -> int:
+        return self.time
+
+    def get_position(self) -> int:
+        return self.position
+
+    def get_status(self) -> str:
+        return self.status
+
+
+ClassResults = OrderedDict[str, [ParsedResult]]
 
 
 def Parse(fname: str) -> ClassResults:
@@ -63,5 +79,5 @@ def Parse(fname: str) -> ClassResults:
         clname = class_res.find("./Class/Name", ns).text
         competitors = class_results.setdefault(clname, [])
         for person_res in class_res.findall("./PersonResult", ns):
-            competitors.append(Result(person_res))
+            competitors.append(ParsedResult(person_res))
     return class_results

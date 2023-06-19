@@ -9,8 +9,6 @@ from tabulate import tabulate
 
 storage = PgStorage()
 rank_table = TimeTable()
-
-
 class_results: ClassResults = result_parser.Parse("results-iof-3.0.xml")
 
 
@@ -44,10 +42,10 @@ for clname, competitors in class_results.items():
         else:
             rank = ""
         table.append([idx + 1,
-                      name.full_name(),
-                      storage.get_ranking(name.id),
-                      name.club,
+                      result.get_name(),
+                      storage.get_ranking(name.full_name()),
+                      result.get_club(),
                       format_time(result),
-                      result.position,
+                      result.get_position(),
                       rank])
     print(tabulate(table, headers=headers))

@@ -1,4 +1,4 @@
-from result_parser import Competitors
+from interfaces import Result
 import re
 
 
@@ -29,14 +29,14 @@ class Course:
             return 1.0
         return 0.1 if self.is_junior else 0.3
 
-    def calc_value(self, competitors: Competitors, storage) -> float:
-        valuable = [res for res in competitors if res.position]
+    def calc_value(self, competitors: [Result], storage) -> float:
+        valuable = [res for res in competitors if res.get_position()]
         if len(valuable) < 3:
             return 0
         valuable = valuable[:12]
         total_value = 0
         for res in valuable:
-            rank = storage.get_ranking(res.name.id)
+            rank = storage.get_ranking(res.get_name())
             val = self.get_rank_value(rank)
             total_value += val
         return total_value

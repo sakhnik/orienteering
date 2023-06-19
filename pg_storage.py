@@ -1,6 +1,7 @@
 import psycopg2
 import defs
 from defs import pg_ns
+from result_parser import Name
 
 
 class PgStorage:
@@ -15,8 +16,11 @@ class PgStorage:
                     FROM {pg_ns}.competitors a"
                 cursor.execute(query)
                 rows = cursor.fetchall()
-                self.names = {id: (f"{last} {first}", self.parse_ranking(note))
+                self.by_id = {id: (f"{last} {first}", self.parse_ranking(note))
                               for id, siid, first, last, note in rows}
+                self.by_name = {}
+                for _, (name, rank) in self.by_id.items():
+                    self.by_name[name] = rank
 
     def parse_ranking(self, note: str) -> str:
         try:
@@ -27,9 +31,8 @@ class PgStorage:
             return ""
 
     def get_name(self, id: int) -> str:
-        name, _ = self.names[id]
+        name, _ = self.by_id[id]
         return name
 
-    def get_ranking(self, id: int) -> str:
-        _, rank = self.names[id]
-        return rank
+    def get_ranking(self, name: str) -> str:
+        return self.by_name.get(name, "")

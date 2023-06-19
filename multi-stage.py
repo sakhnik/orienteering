@@ -18,11 +18,13 @@
 
 from result_parser import Name, Result, ClassResults
 import result_parser
+from pg_storage import PgStorage
+from course import Course
 from collections import OrderedDict
 from tabulate import tabulate
 
 stage_count: int = 4
-ns = {"": "http://www.orienteering.org/datastandard/3.0"}
+storage = PgStorage()
 
 
 class TotalResult:
@@ -32,9 +34,25 @@ class TotalResult:
         self.time: float = 0
         self.stages: list[Result] = [None] * stage_count
         self.best_stages: list[Result] = []
+        self.position = None
 
     def comparison_key(self) -> bool:
         return (len(self.best_stages), self.score, self.time)
+
+    def get_name(self) -> str:
+        return self.name.full_name()
+
+    def get_club(self) -> str:
+        return self.name.club
+
+    def get_result(self) -> int:
+        return self.score
+
+    def get_position(self) -> int:
+        return self.position
+
+    def get_status(self) -> str:
+        return "OK"
 
 
 Competitors = dict[Name, TotalResult]
@@ -96,24 +114,41 @@ for clname, competitors in class_results.items():
         results.time = sum((get_time(s) for s in best_stages))
 
 
-headers = ["№", "Ім’я", "Клуб", "К-ть Е", "Час всього", "Бали", "Місце"]
+final_results = OrderedDict()
 for clname, competitors in class_results.items():
-    print()
-    print(f"== {clname} ==")
-    competitors_ranged = sorted([item for item in competitors.items()],
-                                key=lambda k: k[1].comparison_key(),
+    competitors_ranged = sorted([res for res in competitors.values()],
+                                key=lambda k: k.comparison_key(),
                                 reverse=True)
+    final_results[clname] = competitors_ranged
+
+for clname, competitors in final_results.items():
+    prev_result = None
+    position = 1
+    for idx, result in enumerate(competitors):
+        if not result.get_result():
+            break
+        if prev_result and \
+                prev_result.comparison_key() > result.comparison_key():
+            position = result.position = idx + 1
+        else:
+            result.position = position
+        prev_result = result
+
+headers = ["№", "Ім’я", "Розряд", "Клуб", "К-ть Е", "Час всього", "Бали",
+           "Місце"]
+for clname, competitors in final_results.items():
+    print()
+    course = Course(clname)
+    course_value = course.calc_value(competitors, storage)
+    #course_rules = rank_table.get_course_rules(course_value)
+    print(f"== {clname} (ранг = {course_value:.1f}) ==")
     table = []
-    prev_results = None
-    place = 1
-    for idx, (name, results) in enumerate(competitors_ranged):
-        if prev_results and \
-                prev_results.comparison_key() > results.comparison_key():
-            place += 1
-        prev_results = results
-        table.append([idx + 1, name.full_name(), name.club,
-                      len(results.best_stages),
-                      format_time(results),
-                      results.score,
-                      place])
+    for idx, result in enumerate(competitors):
+        table.append([idx + 1, result.get_name(),
+                      storage.get_ranking(result.get_name()),
+                      result.get_club(),
+                      len(result.best_stages),
+                      format_time(result),
+                      result.get_result(),
+                      result.get_position()])
     print(tabulate(table, headers=headers))
