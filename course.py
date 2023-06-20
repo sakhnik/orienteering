@@ -1,6 +1,9 @@
 from interfaces import Result
 import re
 
+# Таблицю оцінки спортивних результатів взято з офіційного документу:
+# https://zakon.rada.gov.ua/laws/show/z1018-17/conv#n271
+
 
 class Course:
     def __init__(self, clname: str):

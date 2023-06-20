@@ -1,6 +1,9 @@
 from bisect import bisect
 from typing import Callable
 
+# Класифікаційні таблиці взято з офіційного документу:
+# https://zakon.rada.gov.ua/laws/show/z1018-17/conv#n271
+
 time_table = [
     (0,    []),
     (1,    [0.00, 0.00, 0.00, 0.00, 1.14]),

@@ -43,11 +43,13 @@ for clname, competitors in class_results.items():
             )
         else:
             rank = ""
+        position = result.get_position() if result.get_position() \
+            else result.get_status()
         table.append([idx + 1,
                       result.get_name(),
                       storage.get_ranking(name.full_name()),
                       result.get_club(),
                       format_time(result),
-                      result.get_position(),
+                      position,
                       rank])
     print(tabulate(table, headers=headers))

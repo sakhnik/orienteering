@@ -30,16 +30,22 @@ rank_table = RankTable(False)
 
 
 class TotalResult:
+    status_value = {"OK": 0, "NC": -1, "MP": -2}
+
     def __init__(self, name: Name):
         self.name = name
         self.score: int = 0
         self.time: float = 0
         self.stages: list[Result] = [None] * stage_count
         self.best_stages: list[Result] = []
+        self.status: str = "OK"
         self.position = None
 
     def comparison_key(self) -> bool:
-        return (len(self.best_stages), self.score, self.time)
+        return (TotalResult.status_value[self.status],
+                len(self.best_stages),
+                self.score,
+                -self.time)
 
     def get_name(self) -> str:
         return self.name.full_name()
@@ -54,7 +60,7 @@ class TotalResult:
         return self.position
 
     def get_status(self) -> str:
-        return "OK"
+        return self.status
 
 
 Competitors = dict[Name, TotalResult]
@@ -107,14 +113,17 @@ def format_time(result: Result) -> str:
 
 
 for clname, competitors in class_results.items():
-    for name, results in competitors.items():
-        results.stages.sort(key=lambda k: (get_score(k), get_time(k)),
-                            reverse=True)
-        best_stages = [r for r in results.stages if r][0:3]
-        results.best_stages = best_stages
-        results.score = sum((get_score(s) for s in best_stages))
-        results.time = sum((get_time(s) for s in best_stages))
-
+    for name, result in competitors.items():
+        result.stages.sort(key=lambda k: (get_score(k), get_time(k)),
+                           reverse=True)
+        best_stages = [r for r in result.stages if r][0:3]
+        result.best_stages = best_stages
+        result.score = sum((get_score(s) for s in best_stages))
+        result.time = sum((get_time(s) for s in best_stages))
+        if any((s.get_status() == "NC" for s in best_stages)):
+            result.status = "NC"
+        if not result.score:
+            result.status = "MP"
 
 final_results = OrderedDict()
 for clname, competitors in class_results.items():
@@ -145,6 +154,7 @@ for clname, competitors in final_results.items():
     course_rules = rank_table.get_course_rules(course_value)
     print(f"== {clname} (ранг = {course_value:.1f}) ==")
     table = []
+    prev_status = "OK"
     for idx, result in enumerate(competitors):
         if result.position:
             rank = rank_table.estimate_rank(
@@ -153,12 +163,14 @@ for clname, competitors in final_results.items():
             )
         else:
             rank = ""
+        position = result.get_position() if result.get_position() \
+            else result.get_status()
         table.append([idx + 1, result.get_name(),
                       storage.get_ranking(result.get_name()),
                       result.get_club(),
                       len(result.best_stages),
                       format_time(result),
                       result.get_result(),
-                      result.get_position(),
+                      position,
                       rank])
     print(tabulate(table, headers=headers))
