@@ -20,11 +20,13 @@ from result_parser import Name, Result, ClassResults
 import result_parser
 from pg_storage import PgStorage
 from course import Course
+from rank_table import RankTable
 from collections import OrderedDict
 from tabulate import tabulate
 
 stage_count: int = 4
 storage = PgStorage()
+rank_table = RankTable(False)
 
 
 class TotalResult:
@@ -135,20 +137,28 @@ for clname, competitors in final_results.items():
         prev_result = result
 
 headers = ["№", "Ім’я", "Розряд", "Клуб", "К-ть Е", "Час всього", "Бали",
-           "Місце"]
+           "Місце", "Виконано"]
 for clname, competitors in final_results.items():
     print()
     course = Course(clname)
     course_value = course.calc_value(competitors, storage)
-    #course_rules = rank_table.get_course_rules(course_value)
+    course_rules = rank_table.get_course_rules(course_value)
     print(f"== {clname} (ранг = {course_value:.1f}) ==")
     table = []
     for idx, result in enumerate(competitors):
+        if result.position:
+            rank = rank_table.estimate_rank(
+                float(result.get_result()) / competitors[0].get_result(),
+                course.is_junior, course_rules
+            )
+        else:
+            rank = ""
         table.append([idx + 1, result.get_name(),
                       storage.get_ranking(result.get_name()),
                       result.get_club(),
                       len(result.best_stages),
                       format_time(result),
                       result.get_result(),
-                      result.get_position()])
+                      result.get_position(),
+                      rank])
     print(tabulate(table, headers=headers))

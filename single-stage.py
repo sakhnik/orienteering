@@ -4,11 +4,11 @@ from pg_storage import PgStorage
 from result_parser import Result, ClassResults
 import result_parser
 from course import Course
-from time_table import TimeTable
+from rank_table import RankTable
 from tabulate import tabulate
 
 storage = PgStorage()
-rank_table = TimeTable()
+rank_table = RankTable()
 class_results: ClassResults = result_parser.Parse("results-iof-3.0.xml")
 
 
@@ -37,8 +37,10 @@ for clname, competitors in class_results.items():
     for idx, result in enumerate(competitors):
         name = result.name
         if result.position:
-            rank = rank_table.estimate_rank(result.time, competitors[0].time,
-                                            course.is_junior, course_rules)
+            rank = rank_table.estimate_rank(
+                float(result.time) / competitors[0].time,
+                course.is_junior, course_rules
+            )
         else:
             rank = ""
         table.append([idx + 1,
