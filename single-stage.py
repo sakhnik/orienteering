@@ -1,13 +1,18 @@
 #!/usr/bin/env python
 
-from pg_storage import PgStorage
+from csv_storage import CsvStorage
 from result_parser import Result, ClassResults
 import result_parser
 from course import Course
 from rank_table import RankTable
 from tabulate import tabulate
+import argparse
 
-storage = PgStorage()
+parser = argparse.ArgumentParser(description='Multi-stage arguments')
+parser.add_argument('--ranks', help='path to the ranks CSV file')
+args = parser.parse_args()
+
+storage = CsvStorage(args.ranks)
 rank_table = RankTable()
 class_results: ClassResults = result_parser.Parse("results-iof-3.0.xml")
 

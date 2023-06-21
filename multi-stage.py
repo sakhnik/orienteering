@@ -18,14 +18,21 @@
 
 from result_parser import Name, Result, ClassResults
 import result_parser
-from pg_storage import PgStorage
+from csv_storage import CsvStorage
 from course import Course
 from rank_table import RankTable
 from collections import OrderedDict
 from tabulate import tabulate
+import argparse
+
+
+parser = argparse.ArgumentParser(description='Multi-stage arguments')
+parser.add_argument('--ranks', help='path to the ranks CSV file')
+args = parser.parse_args()
+
+storage = CsvStorage(args.ranks)
 
 stage_count: int = 4
-storage = PgStorage()
 rank_table = RankTable(False)
 
 
