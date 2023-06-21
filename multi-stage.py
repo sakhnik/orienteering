@@ -114,16 +114,16 @@ def format_time(result: Result) -> str:
 
 for clname, competitors in class_results.items():
     for name, result in competitors.items():
-        result.stages.sort(key=lambda k: (get_score(k), get_time(k)),
+        result.stages.sort(key=lambda k: (get_score(k), -get_time(k)),
                            reverse=True)
         best_stages = [r for r in result.stages if r][0:3]
         result.best_stages = best_stages
         result.score = sum((get_score(s) for s in best_stages))
         result.time = sum((get_time(s) for s in best_stages))
-        if any((s.get_status() == "NC" for s in best_stages)):
-            result.status = "NC"
         if not result.score:
             result.status = "MP"
+        if any((s.get_status() == "NC" for s in best_stages)):
+            result.status = "NC"
 
 final_results = OrderedDict()
 for clname, competitors in class_results.items():
